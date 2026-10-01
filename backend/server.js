@@ -15,7 +15,7 @@ const contactRoutes = require("./routes/contactRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const testimonialRoutes = require("./routes/testimonialRoutes");
 const tenderRoutes = require("./routes/tenderRoutes");
-
+const siteRoutes = require("./routes/siteRoutes");
 connectDB();
 
 const app = express();
@@ -113,7 +113,7 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/tenders", tenderRoutes);
-
+app.use("/api/sites", siteRoutes);
 /* =========================================================
    ERROR HANDLING
 ========================================================= */

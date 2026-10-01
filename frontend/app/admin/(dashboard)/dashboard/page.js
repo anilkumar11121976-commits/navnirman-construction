@@ -69,7 +69,7 @@ export default function AdminOverviewPage() {
         ))}
       </Grid>
 
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mt: 4 }}>
+      <Stack direction="row" flexWrap="wrap" spacing={1.5} sx={{ mt: 4, rowGap: 1.5 }}>
         <Button variant="contained" color="primary" component={Link} href="/admin/tenders">
           Add a Tender
         </Button>
