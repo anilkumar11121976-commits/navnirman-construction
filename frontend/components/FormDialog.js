@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import {
-  Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, TextField, Typography,
+  Alert, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, MenuItem,
+  Stack, TextField, Typography,
 } from "@mui/material";
 
 /**
  * Generic add/edit dialog.
- * fields: [{ name, label, type: text|number|date|select|multiline|files, options, required, helperText }]
+ * fields: [{ name, label, type: text|number|date|select|multiline|files|boolean, options, required, helperText }]
  * onSubmit(values) -> Promise. Error aaye toh dialog khula rehta hai aur message dikhata hai.
  */
 export default function FormDialog({ open, title, fields, initial, submitLabel = "Save", onClose, onSubmit }) {
@@ -48,7 +49,13 @@ export default function FormDialog({ open, title, fields, initial, submitLabel =
         <Stack spacing={2} sx={{ mt: 1 }}>
           {error && <Alert severity="error">{error}</Alert>}
           {fields.map((f) =>
-            f.type === "files" ? (
+            f.type === "boolean" ? (
+              <FormControlLabel
+                key={f.name}
+                control={<Checkbox checked={!!values[f.name]} onChange={(e) => set(f.name, e.target.checked)} />}
+                label={f.label}
+              />
+            ) : f.type === "files" ? (
               <Box key={f.name}>
                 <Button component="label" variant="outlined">
                   {f.label}

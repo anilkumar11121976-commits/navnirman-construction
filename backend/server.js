@@ -16,6 +16,7 @@ const profileRoutes = require("./routes/profileRoutes");
 const testimonialRoutes = require("./routes/testimonialRoutes");
 const tenderRoutes = require("./routes/tenderRoutes");
 const siteRoutes = require("./routes/siteRoutes");
+const workerRoutes = require("./routes/workerRoutes");
 connectDB();
 
 const app = express();
@@ -114,6 +115,7 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/tenders", tenderRoutes);
 app.use("/api/sites", siteRoutes);
+app.use("/api/workers", workerRoutes);
 /* =========================================================
    ERROR HANDLING
 ========================================================= */

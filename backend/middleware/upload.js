@@ -8,6 +8,9 @@ const folderForField = (fieldname) => {
   if (fieldname === "logo" || fieldname === "cover" || fieldname === "gallery") {
     return "vendorworks/profile";
   }
+  if (fieldname === "photo") {
+    return "vendorworks/attendance";
+  }
   return "vendorworks/works";
 };
 

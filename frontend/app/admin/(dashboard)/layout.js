@@ -11,6 +11,8 @@ import StorefrontIcon from "@mui/icons-material/StorefrontOutlined";
 import RateReviewIcon from "@mui/icons-material/RateReviewOutlined";
 import GavelIcon from "@mui/icons-material/GavelOutlined";
 import HomeWorkIcon from "@mui/icons-material/HomeWorkOutlined";
+import GroupsIcon from "@mui/icons-material/GroupsOutlined";
+import EventAvailableIcon from "@mui/icons-material/EventAvailableOutlined";
 import DescriptionIcon from "@mui/icons-material/DescriptionOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -23,6 +25,8 @@ const nav = [
   { href: "/admin/dashboard", label: "Overview", icon: DashboardIcon },
   { href: "/admin/tenders", label: "Tenders", icon: GavelIcon },
   { href: "/admin/sites", label: "Site Progress", icon: HomeWorkIcon },
+  { href: "/admin/attendance", label: "Attendance", icon: EventAvailableIcon },
+  { href: "/admin/workers", label: "Workers", icon: GroupsIcon },
   { href: "/admin/works", label: "Projects", icon: PhotoLibraryIcon },
   { href: "/admin/profile", label: "Company Profile", icon: StorefrontIcon },
   { href: "/admin/categories", label: "Services", icon: CategoryIcon },
