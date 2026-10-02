@@ -31,6 +31,8 @@ const workerGross = (w, uptoDate = null, fromDate = null) =>
     return sum + entryGross(a, w);
   }, 0);
 
+// Lunch is a benefit paid FOR the worker that ADDS to what they're owed (it's part of
+// their day's pay, not a cost taken out of it).
 const lunchUpto = (w, uptoDate = null, fromDate = null) =>
   w.attendance.reduce((sum, a) => {
     if (uptoDate && a.date > uptoDate) return sum;
@@ -49,15 +51,16 @@ const paidUpto = (w, uptoDate = null, fromDate = null) =>
 const presentWorker = (w) => {
   const wk = w.toObject ? w.toObject() : w;
   const earned = Math.round(workerGross(wk)); // gross: wage + overtime
-  const lunch = Math.round(lunchUpto(wk)); // total lunch cost deducted
+  const lunch = Math.round(lunchUpto(wk)); // total lunch benefit — added to pay
   const paid = Math.round(paidUpto(wk));
-  const diff = earned - lunch - paid; // positive = still owed, negative = paid in advance
+  const diff = earned + lunch - paid; // positive = still owed, negative = paid in advance
   const counts = { present: 0, absent: 0, half_day: 0, leave: 0 };
   let overtimeHours = 0;
   wk.attendance.forEach((a) => {
     counts[a.status] = (counts[a.status] || 0) + 1;
     overtimeHours += a.overtimeHours || 0;
   });
+  const rates = currentRates(wk);
   wk.earned = earned;
   wk.lunch = lunch;
   wk.paid = paid;
@@ -66,6 +69,8 @@ const presentWorker = (w) => {
   wk.daysLogged = wk.attendance.length;
   wk.counts = counts;
   wk.overtimeHours = overtimeHours;
+  wk.effectiveDailyRate = Math.round(rates.dailyRate);
+  wk.effectiveOvertimeRate = Math.round(rates.overtimeRate * 100) / 100;
   wk.attendance = [...wk.attendance].sort((a, b) => (a.date < b.date ? 1 : -1));
   wk.settlements = [...wk.settlements].sort((a, b) => (a.toDate < b.toDate ? 1 : -1));
   return wk;

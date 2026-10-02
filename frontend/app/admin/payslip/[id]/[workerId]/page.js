@@ -90,9 +90,9 @@ export default function PayslipPage() {
 
           <Box sx={{ mb: 3 }}>
             {[
-              ["Overtime", `${r.overtimeHours} hrs`],
-              ["Earned (wage + overtime)", inr(r.earned)],
-              ["Lunch deducted", `– ${inr(r.lunch)}`],
+              ["Overtime", `${r.overtimeHours} hrs${worker.overtimeRate ? ` @ ${inr(worker.overtimeRate)}/hr` : ""}`],
+              ["Earned (wage + overtime)", `+ ${inr(r.earned)}`],
+              ["Lunch (added)", `+ ${inr(r.lunch)}`],
               ["Paid in this period", `– ${inr(r.paid)}`],
             ].map(([label, val]) => (
               <Stack key={label} direction="row" justifyContent="space-between" sx={{ py: 0.5, borderBottom: `1px solid ${tokens.line}` }}>

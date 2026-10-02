@@ -16,6 +16,7 @@ const profileRoutes = require("./routes/profileRoutes");
 const testimonialRoutes = require("./routes/testimonialRoutes");
 const tenderRoutes = require("./routes/tenderRoutes");
 const siteRoutes = require("./routes/siteRoutes");
+const attendanceRoutes = require("./routes/attendanceRoutes");
 const workerRoutes = require("./routes/workerRoutes");
 connectDB();
 
@@ -114,6 +115,9 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/tenders", tenderRoutes);
+// attendanceRoutes mounted first — it must see its public /attendance/:token routes
+// before siteRoutes' admin-only "/:id" catch-all gets a chance at them.
+app.use("/api/sites", attendanceRoutes);
 app.use("/api/sites", siteRoutes);
 app.use("/api/workers", workerRoutes);
 /* =========================================================

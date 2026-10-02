@@ -55,15 +55,15 @@ const paymentSchema = new mongoose.Schema({
 // One entry per calendar day ("YYYY-MM-DD") for a worker — upserted by date.
 // dailyRate/overtimeRate are a SNAPSHOT of the worker's wage settings at the moment
 // the entry was first created — so editing a worker's wage later never rewrites what
-// earlier days were worth. lunchAmount is entered fresh each day (it's a cost the
-// contractor pays for the worker's meal, deducted from what's owed to the worker).
+// earlier days were worth. lunchAmount is entered fresh each day (it's a benefit paid
+// to the worker that day — ADDED to what's owed to them, on top of wage + overtime).
 const attendanceSchema = new mongoose.Schema(
   {
     date: { type: String, required: true }, // "YYYY-MM-DD"
     status: { type: String, enum: ["present", "absent", "half_day", "leave"], default: "present" },
     checkIn: { type: String, default: "" }, // "HH:mm", set by the worker or the admin
     overtimeHours: { type: Number, default: 0, min: 0 },
-    lunchAmount: { type: Number, default: 0, min: 0 }, // ₹ spent on this worker's lunch that day — deducted from pay
+    lunchAmount: { type: Number, default: 0, min: 0 }, // ₹ given to this worker for lunch that day — added to pay
     note: { type: String, default: "" },
     markedBy: { type: String, enum: ["worker", "admin"], default: "worker" },
     markedByName: { type: String, default: "", trim: true }, // who actually filled it in, on the public link
@@ -90,9 +90,9 @@ const settlementSchema = new mongoose.Schema(
     toDate: { type: String, required: true }, // "YYYY-MM-DD" — everything up to and including this is locked
     days: { type: Number, default: 0 },
     earned: { type: Number, default: 0 }, // gross: wage + overtime, before lunch
-    lunch: { type: Number, default: 0 }, // total lunch cost deducted
+    lunch: { type: Number, default: 0 }, // total lunch benefit for the period — added to pay
     paid: { type: Number, default: 0 },
-    balance: { type: Number, default: 0 }, // earned - lunch - paid. Negative = paid in advance.
+    balance: { type: Number, default: 0 }, // earned + lunch - paid. Negative = paid in advance.
     note: { type: String, default: "" },
   },
   { timestamps: true }

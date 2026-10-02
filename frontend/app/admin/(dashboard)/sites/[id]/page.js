@@ -26,6 +26,7 @@ import DownloadIcon from "@mui/icons-material/DownloadOutlined";
 import api from "@/lib/api";
 import { tokens } from "@/lib/theme";
 import FormDialog from "@/components/FormDialog";
+import PayWorkerDialog from "@/components/PayWorkerDialog";
 import { PhotoGrid, ProgressBar, StatCard } from "@/components/SiteBits";
 import {
   ATTENDANCE_COLOR, ATTENDANCE_STATUS, MAT_COLOR, MATERIAL_STATUS, PAY_MODES, PERIOD_PRESETS, SITE_COLOR,
@@ -96,7 +97,7 @@ const ATTENDANCE_FIELDS = [
   { name: "status", label: "Status", type: "select", options: ATTENDANCE_STATUS },
   { name: "checkIn", label: "Check-in time (e.g. 09:15 AM)" },
   { name: "overtimeHours", label: "Overtime (hours)", type: "number" },
-  { name: "lunchAmount", label: "Lunch cost (₹)", type: "number", helperText: "Deducted from the worker's pay" },
+  { name: "lunchAmount", label: "Lunch given (₹)", type: "number", helperText: "Added to the worker's pay" },
   { name: "note", label: "Note" },
 ];
 
@@ -438,6 +439,7 @@ function WorkerCard({ worker: w, h }) {
               {w.role && <Chip size="small" variant="outlined" label={w.role} />}
               <Chip size="small" color={w.status === "active" ? "success" : "default"} label={labelOf(WORKER_STATUS, w.status)} />
               <Chip size="small" variant="outlined" label={wageLabel} />
+              {w.effectiveOvertimeRate > 0 && <Chip size="small" variant="outlined" label={`OT ${inr(w.effectiveOvertimeRate)}/hr`} />}
               {w.due > 0 && <Chip size="small" color="warning" label={`Due ${inr(w.due)}`} />}
               {w.advance > 0 && <Chip size="small" color="info" label={`Advance ${inr(w.advance)}`} />}
               {w.lockedThrough && <Chip size="small" icon={<LockIcon />} label={`Settled through ${fdate(w.lockedThrough)}`} />}
@@ -455,9 +457,9 @@ function WorkerCard({ worker: w, h }) {
 
         {/* pay summary */}
         <Grid container spacing={1.5} sx={{ mb: 2.5 }}>
-          <Grid item xs={6} sm={3}><StatCard label="Earned" value={inr(w.earned)} color={tokens.ink} /></Grid>
-          <Grid item xs={6} sm={3}><StatCard label="Lunch" value={inr(w.lunch)} /></Grid>
-          <Grid item xs={6} sm={3}><StatCard label="Paid" value={inr(w.paid)} color="#2e7d32" /></Grid>
+          <Grid item xs={6} sm={3}><StatCard label="Earned (wage + OT)" value={`+${inr(w.earned)}`} color={tokens.ink} /></Grid>
+          <Grid item xs={6} sm={3}><StatCard label="Lunch (added)" value={`+${inr(w.lunch)}`} color={tokens.ink} /></Grid>
+          <Grid item xs={6} sm={3}><StatCard label="Paid" value={`-${inr(w.paid)}`} color="#2e7d32" /></Grid>
           <Grid item xs={6} sm={3}>
             {w.advance > 0 ? (
               <StatCard label="Advance (overpaid)" value={inr(w.advance)} color="#2e7d32" />
@@ -481,7 +483,7 @@ function WorkerCard({ worker: w, h }) {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  {["Date", "Status", "Check-in", "Overtime", "Lunch", "Marked by", "Note", ""].map((t) => (
+                  {["Date", "Status", "Check-in", "Overtime", "Lunch (+)", "Marked by", "Note", ""].map((t) => (
                     <TableCell key={t} sx={{ ...cell, fontWeight: 700 }}>{t}</TableCell>
                   ))}
                 </TableRow>
@@ -493,7 +495,7 @@ function WorkerCard({ worker: w, h }) {
                     <TableCell sx={cell}><Chip size="small" label={labelOf(ATTENDANCE_STATUS, a.status)} color={ATTENDANCE_COLOR[a.status]} /></TableCell>
                     <TableCell sx={cell}>{a.checkIn || "–"}</TableCell>
                     <TableCell sx={cell}>{a.overtimeHours ? `${a.overtimeHours}h` : "–"}</TableCell>
-                    <TableCell sx={cell}>{a.lunchAmount ? inr(a.lunchAmount) : "–"}</TableCell>
+                    <TableCell sx={cell}>{a.lunchAmount ? `+${inr(a.lunchAmount)}` : "–"}</TableCell>
                     <TableCell sx={cell}>{a.markedByName || (a.markedBy === "admin" ? "Admin" : "Worker")}</TableCell>
                     <TableCell sx={cell}>{a.note || "–"}</TableCell>
                     <TableCell sx={cell}>
@@ -566,7 +568,7 @@ function WorkerCard({ worker: w, h }) {
           <Stack spacing={1}>
             {w.settlements.map((s) => (
               <Paper key={s._id} elevation={0} sx={{ p: 1.5, border: `1px solid ${tokens.line}`, fontSize: "0.85rem" }}>
-                Up to <b>{fdate(s.toDate)}</b> · {s.days} days · Earned {inr(s.earned)} · Lunch {inr(s.lunch)} · Paid {inr(s.paid)} ·{" "}
+                Up to <b>{fdate(s.toDate)}</b> · {s.days} days · Earned +{inr(s.earned)} · Lunch +{inr(s.lunch)} · Paid -{inr(s.paid)} ·{" "}
                 {s.balance < 0 ? `Advance ${inr(-s.balance)}` : `Balance ${inr(s.balance)}`}
                 {s.note && <Typography sx={{ fontSize: "0.8rem", color: "#6b665c", mt: 0.25 }}>{s.note}</Typography>}
               </Paper>
@@ -633,15 +635,15 @@ function ReportDialog({ open, siteId, worker, onClose }) {
   const waText = report
     ? `${worker.name} — payslip ${from ? fdate(from) : "start"} to ${to ? fdate(to) : "today"}:\n` +
       `Present: ${report.counts.present}, Half day: ${report.counts.half_day}, Absent: ${report.counts.absent}, Leave: ${report.counts.leave}\n` +
-      `Overtime: ${report.overtimeHours} hrs\n` +
-      `Earned: ${inr(report.earned)}\nLunch: ${inr(report.lunch)}\nPaid: ${inr(report.paid)}\n` +
+      `Overtime: ${report.overtimeHours} hrs${worker.effectiveOvertimeRate ? ` @ ${inr(worker.effectiveOvertimeRate)}/hr` : ""}\n` +
+      `Earned: +${inr(report.earned)}\nLunch: +${inr(report.lunch)}\nPaid: -${inr(report.paid)}\n` +
       `${report.balance < 0 ? "Advance" : "Balance due"}: ${inr(Math.abs(report.balance))}`
     : "";
 
   const exportCsv = () => {
     if (!report) return;
     const rows = report.entries.map((e) => ({
-      Date: e.date, Status: e.status, "Check-in": e.checkIn, "Overtime (hrs)": e.overtimeHours, "Lunch (Rs)": e.lunchAmount, Note: e.note,
+      Date: e.date, Status: e.status, "Check-in": e.checkIn, "Overtime (hrs)": e.overtimeHours, "Lunch added (Rs)": e.lunchAmount, Note: e.note,
     }));
     downloadCsv(`${worker.name}-attendance-${from || "start"}-to-${to || "today"}.csv`, rows);
   };
@@ -667,9 +669,9 @@ function ReportDialog({ open, siteId, worker, onClose }) {
         {report && !loading && (
           <>
             <Grid container spacing={1.5} sx={{ mb: 2 }}>
-              <Grid item xs={6} sm={3}><StatCard label="Earned" value={inr(report.earned)} color={tokens.ink} /></Grid>
-              <Grid item xs={6} sm={3}><StatCard label="Lunch" value={inr(report.lunch)} /></Grid>
-              <Grid item xs={6} sm={3}><StatCard label="Paid" value={inr(report.paid)} color="#2e7d32" /></Grid>
+              <Grid item xs={6} sm={3}><StatCard label="Earned" value={`+${inr(report.earned)}`} color={tokens.ink} /></Grid>
+              <Grid item xs={6} sm={3}><StatCard label="Lunch (added)" value={`+${inr(report.lunch)}`} color={tokens.ink} /></Grid>
+              <Grid item xs={6} sm={3}><StatCard label="Paid" value={`-${inr(report.paid)}`} color="#2e7d32" /></Grid>
               <Grid item xs={6} sm={3}>
                 {report.balance < 0 ? (
                   <StatCard label="Advance" value={inr(-report.balance)} color="#2e7d32" />
@@ -680,6 +682,7 @@ function ReportDialog({ open, siteId, worker, onClose }) {
             </Grid>
             <Typography sx={{ fontSize: "0.85rem", color: "#6b665c", mb: 2 }}>
               {report.counts.present} present · {report.counts.half_day} half-day · {report.counts.absent} absent · {report.counts.leave} leave · {report.overtimeHours}h overtime
+              {worker.effectiveOvertimeRate > 0 ? ` (${inr(worker.effectiveOvertimeRate)}/hr)` : ""}
             </Typography>
           </>
         )}
@@ -884,12 +887,6 @@ export default function SiteDetailPage() {
       initial: { date: today, status: "present" },
       submitLabel: "Save entry",
       onSubmit: (v) => save(api.post(`${base}/workers/${dlg.worker._id}/attendance`, v)),
-    },
-    "worker-payment": {
-      title: `Pay ${dlg?.worker?.name}`,
-      fields: WORKER_PAYMENT_FIELDS,
-      initial: { date: today, mode: "cash" },
-      onSubmit: (v) => save(api.post(`${base}/workers/${dlg.worker._id}/payments`, v)),
     },
     "worker-payment-edit": {
       title: `Edit payment: ${dlg?.worker?.name}`,
@@ -1197,6 +1194,17 @@ export default function SiteDetailPage() {
 
       {dlg?.kind === "worker-report" && (
         <ReportDialog open siteId={id} worker={dlg.worker} onClose={() => setDlg(null)} />
+      )}
+
+      {dlg?.kind === "worker-payment" && (
+        <PayWorkerDialog
+          open
+          workerName={dlg.worker.name}
+          due={dlg.worker.due}
+          advance={dlg.worker.advance}
+          onClose={() => setDlg(null)}
+          onSubmit={(v) => save(api.post(`${base}/workers/${dlg.worker._id}/payments`, v))}
+        />
       )}
 
       {cfg && (
